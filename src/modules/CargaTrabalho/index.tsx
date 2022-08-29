@@ -1,35 +1,37 @@
-import React, { useState } from "react";
+import { ChangeEvent, useState } from "react";
+import cogoToast from "cogo-toast";
+
 import groupIcon from "../../assets/images/group.png";
 import graphicIcon from "../../assets/images/grafico.png";
 import graphicLowIcon from "../../assets/images/grafico2.png";
 import configIcon from "../../assets/images/config.png";
 import groupGrey from "../../assets/images/group-grey.png";
+import lixoIcon from "../../assets/images/lixo.png";
 import nucleo from "../../assets/images/processador.png";
 
 import {
-  BorderRight,
   BoxText,
   Flex,
   Grid,
   Icons,
   Subtitle,
   Title,
+  TrashButton,
   WorkerContainer,
   WorkerContent,
   WorkerImage,
 } from "./styles";
 import BoxInputContainer from "../../components/BoxInput";
 import Metricas from "../../components/Metricas";
+import cogoDefaultOptions from "../../components/util/toast";
+import { INITIAL, IWorker, TypeWorker, TypeWorkerEnum } from "./types";
 
 export default function CargaTrabalho() {
-  const [workload, setWorkload] = useState({
-    quantity: 0,
-    message: 0,
-  });
-  const [metricas, setMetricas] = useState({
-    quantity: 0,
-    message: 0,
-  });
+  const [workload, setWorkload] = useState(INITIAL);
+  const [metricas, setMetricas] = useState(INITIAL);
+
+  const [arrayWorkload, setArrayWorkload] = useState<IWorker[]>([]);
+  const [arrayMetricas, setArrayMetricas] = useState<IWorker[]>([]);
 
   function renderText(icon: string, title: string, subtitle: string) {
     return (
@@ -44,12 +46,43 @@ export default function CargaTrabalho() {
       </BoxText>
     );
   }
-  function renderWorkers(icon: string, value: number, borderColor?: string) {
+
+  function onDelete(type: TypeWorkerEnum, id: number) {
+    document.getElementById(String(id))?.classList.add("element");
+    if (type === TypeWorker.WORKLOAD) {
+      setTimeout(() => {
+        setArrayWorkload((item) => item.filter((x) => x.id !== id));
+        cogoToast.success(
+          `Carga de trabalho ${id} deletada`,
+          cogoDefaultOptions
+        );
+        document.getElementById(String(id))?.classList.remove("element");
+      }, 3000);
+
+      return;
+    }
+
+    setTimeout(() => {
+      setArrayMetricas((item) => item.filter((x) => x.id !== id));
+      cogoToast.success(`Processador ${id} deletado`, cogoDefaultOptions);
+      document.getElementById(String(id))?.classList.remove("element");
+    }, 3000);
+  }
+
+  function renderWorkers(
+    icon: string,
+    value: number,
+    type: TypeWorkerEnum,
+    id: number,
+    borderColor?: string
+  ) {
     return (
-      <WorkerContainer style={{ borderColor }}>
+      <WorkerContainer id={String(id)} style={{ borderColor }}>
         <p style={{ padding: 16 }}>{value} m/s</p>
         <WorkerContent>
-          <BorderRight />
+          <TrashButton onClick={() => onDelete(type, id)}>
+            <img src={lixoIcon} alt="" width={25} height={25} />
+          </TrashButton>
           <WorkerImage>
             <img src={icon} alt="" width={25} height={25} />
           </WorkerImage>
@@ -58,56 +91,77 @@ export default function CargaTrabalho() {
     );
   }
 
-  function handleCancel(type: "workload" | "metricas") {
-    if (type === "workload") {
-      setWorkload({
-        message: 0,
-        quantity: 0,
+  function handleCancel(type: TypeWorkerEnum) {
+    type === TypeWorker.WORKLOAD ? setWorkload(INITIAL) : setMetricas(INITIAL);
+  }
+
+  function randomIntFromInterval(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+  }
+
+  function buildingBox(quantity: number, message: number) {
+    let array = [];
+    for (let index = 0; index < quantity; index++) {
+      array.push({
+        id: randomIntFromInterval(5, 1000),
+        message: message,
+        quantity: quantity,
       });
-      return;
     }
 
-    setMetricas({
-      message: 0,
-      quantity: 0,
-    });
+    return array;
   }
 
-  function handleSubmit(type: "workload" | "metricas") {
-    if (type === "workload") {
+  function handleSubmit(type: TypeWorkerEnum) {
+    if (type === TypeWorker.WORKLOAD) {
+      let array = buildingBox(workload.quantity, workload.message);
+      setArrayWorkload([...arrayWorkload, ...array]);
       return;
     }
+    let array = buildingBox(metricas.quantity, metricas.message);
+    setArrayMetricas([...arrayMetricas, ...array]);
   }
 
-  function handleMessage(type: "workload" | "metricas", message: number) {
-    console.log(message)
-    if (type === "workload") {
-      setWorkload({
-        quantity: workload.quantity,
-        message,
-      });
-      return;
-    }
-
-    setMetricas({
-      quantity: workload.quantity,
-      message,
-    });
-  }
-
-  function handleQuantity(type: "workload" | "metricas", quantity: number) {
-    if (type === "workload") {
+  function handleMessage(event: ChangeEvent<HTMLInputElement>) {
+    const { id, value } = event.target;
+    let formatValue = Number.parseInt(value);
+    if (isNaN(formatValue) || !value) formatValue = 0;
+    if (id === TypeWorker.WORKLOAD) {
       setWorkload({
         quantity: workload.quantity,
-        message: quantity,
+        message: formatValue,
       });
+
       return;
     }
 
     setMetricas({
-      quantity: workload.quantity,
-      message: quantity,
+      quantity: metricas.quantity,
+      message: formatValue,
     });
+  }
+
+  function handleQuantity(event: ChangeEvent<HTMLInputElement>) {
+    const { id, value } = event.target;
+    let formatValue = Number.parseInt(value);
+    if (id === TypeWorker.WORKLOAD) {
+      setWorkload({
+        message: workload.message,
+        quantity: formatValue,
+      });
+
+      return;
+    }
+    setMetricas({
+      message: metricas.message,
+      quantity: formatValue,
+    });
+  }
+
+  function calculateCount(worker: IWorker[]) {
+    return worker.reduce((count, work: IWorker) => {
+      return count + work.message;
+    }, 0);
   }
 
   return (
@@ -135,30 +189,40 @@ export default function CargaTrabalho() {
             title="Adicionar"
             messageValue={workload.message}
             quantityValue={workload.quantity}
-            onCancel={() => handleCancel("workload")}
-            onSubmit={() => handleSubmit("workload")}
-            onChangeMessage={(e) => handleMessage("workload", Number(e))}
-            onChangeQuantity={(e) => handleQuantity("workload", Number(e))}
+            onCancel={() => handleCancel(TypeWorker.WORKLOAD)}
+            onSubmit={() => handleSubmit(TypeWorker.WORKLOAD)}
+            onChangeMessage={(e) => handleMessage(e)}
+            onChangeQuantity={(e) => handleQuantity(e)}
+            id={TypeWorker.WORKLOAD}
           />
           <Flex>
             <Metricas
               image={groupIcon}
-              quantity={3}
+              quantity={arrayWorkload.length | 0}
               title="Workloads (Qtd)"
               borderColor="#9797ff"
               background="#9797ff"
+              marginRight={16}
             />
             <Metricas
               image={graphicIcon}
-              quantity={3}
+              quantity={calculateCount(arrayWorkload) | 0}
               title="Força do Workloads (Msg/s)"
               borderColor="#9797ff"
               background="#9797ff"
             />
           </Flex>
-          <Flex>
-            {renderWorkers(groupGrey, 3, "#9797ff")}
-            {renderWorkers(groupGrey, 3, "#9797ff")}
+          <Flex style={{ flexWrap: "wrap" }}>
+            {arrayWorkload.length > 0 &&
+              arrayWorkload.map((x, i) => {
+                return renderWorkers(
+                  groupGrey,
+                  x.message,
+                  TypeWorker.WORKLOAD,
+                  x.id,
+                  "#9797ff"
+                );
+              })}
           </Flex>
         </div>
 
@@ -174,31 +238,41 @@ export default function CargaTrabalho() {
             title="Adicionar"
             messageValue={metricas.message}
             quantityValue={metricas.quantity}
-            onCancel={() => handleCancel("metricas")}
-            onSubmit={() => handleSubmit("metricas")}
-            onChangeMessage={(e) => handleMessage("metricas", Number(e))}
-            onChangeQuantity={(e) => handleQuantity("metricas", Number(e))}
+            onCancel={() => handleCancel(TypeWorker.METRICAS)}
+            onSubmit={() => handleSubmit(TypeWorker.METRICAS)}
+            onChangeMessage={(e) => handleMessage(e)}
+            onChangeQuantity={(e) => handleQuantity(e)}
+            id={TypeWorker.METRICAS}
           />
           <Flex>
             <Metricas
               image={configIcon}
-              quantity={3}
+              quantity={arrayMetricas.length | 0}
               title="Workers (Qtd)"
               borderColor="red"
               background="red"
+              marginRight={16}
             />
             <Metricas
               image={graphicLowIcon}
-              quantity={3}
+              quantity={calculateCount(arrayMetricas) | 0}
               title="Capacidade de consumo (Msg/s)"
               borderColor="red"
               background="red"
             />
           </Flex>
 
-          <Flex>
-            {renderWorkers(nucleo, 5, "red")}
-            {renderWorkers(nucleo, 5, "red")}
+          <Flex style={{ flexWrap: "wrap" }}>
+            {arrayMetricas.length > 0 &&
+              arrayMetricas.map((x, i) => {
+                return renderWorkers(
+                  nucleo,
+                  x.message,
+                  TypeWorker.METRICAS,
+                  x.id,
+                  "red"
+                );
+              })}
           </Flex>
         </div>
       </Grid>

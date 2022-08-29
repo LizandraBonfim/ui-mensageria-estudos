@@ -7,11 +7,12 @@ export interface IMetricas {
   quantity: number;
   borderColor?: string;
   background?: string;
+  marginRight?: number;
 }
 export default function Metricas(props: IMetricas) {
-  const { image, quantity, title, borderColor, background } = props;
+  const { image, quantity, title, borderColor, background, marginRight } = props;
   return (
-    <CardContainer style={{ borderColor }}>
+    <CardContainer style={{ borderColor, marginRight }}>
       <BackgroundIcon style={{ background: background ? background : "red" }}>
         <img src={image} alt="" width={25} />
       </BackgroundIcon>

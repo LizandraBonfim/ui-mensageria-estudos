@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ChangeEvent } from "react";
 import Button from "../Button";
 import Input from "../Input";
 import { BoxButtons, BoxInput, InputContainer } from "./styles";
@@ -7,11 +7,12 @@ export interface PropsBoxnput {
   title: string;
   subtitle: string;
   quantityValue: number;
-  onChangeQuantity: (value: string) => void;
+  onChangeQuantity: (e: ChangeEvent<HTMLInputElement>) => void;
   messageValue: number;
-  onChangeMessage: (value: string) => void;
+  onChangeMessage: (e: ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
   onCancel: () => void;
+  id: string
 }
 
 export default function BoxInputContainer(props: PropsBoxnput) {
@@ -24,8 +25,10 @@ export default function BoxInputContainer(props: PropsBoxnput) {
     onChangeQuantity,
     onSubmit,
     quantityValue,
+    id
   } = props;
   console.log({ messageValue, quantityValue });
+
   return (
     <BoxInput>
       <span>
@@ -36,26 +39,28 @@ export default function BoxInputContainer(props: PropsBoxnput) {
       <InputContainer>
         <BoxInput style={{ padding: 16 }}>
           <Input
-            onChange={(e) => onChangeQuantity(e.target.value)}
+            onChange={(e) => onChangeQuantity(e)}
             type="number"
-            value={messageValue}
+            value={String(quantityValue)}
             label={"Quantidade"}
+            id={id}
           />
           <Input
-            onChange={(e) => onChangeMessage(e.target.value)}
+            onChange={(e) => onChangeMessage(e)}
             type="number"
-            value={quantityValue}
+            value={String(messageValue)}
             label={"Mensagens/s"}
+            id={id}
           />
         </BoxInput>
 
         <BoxButtons>
           <Button
-            onChange={onCancel}
+            onClick={onCancel}
             title="Cancelar"
             style={{ marginRight: 10 }}
           />
-          <Button onChange={onSubmit} title="Adicionar" />
+          <Button onClick={onSubmit} title="Adicionar" />
         </BoxButtons>
       </InputContainer>
     </BoxInput>

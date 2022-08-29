@@ -2,14 +2,14 @@ import React from "react";
 import { ButtonWrapper } from "./styles";
 
 export interface PropsButton {
-  onChange: () => void;
+  onClick: () => void;
   title: string;
   style?: React.CSSProperties;
 }
 export default function Button(props: PropsButton) {
-  const { onChange, title, style } = props;
+  const { onClick, title, style } = props;
   return (
-    <ButtonWrapper onChange={onChange} style={style}>
+    <ButtonWrapper onClick={onClick} style={style}>
       {title}
     </ButtonWrapper>
   );
